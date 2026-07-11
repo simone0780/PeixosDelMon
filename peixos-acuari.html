@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Espècies de Peixos — Ecology &amp; Fish Data API</title>
+    <link rel="stylesheet" href="styles-fish.css">
+</head>
+<body>
+    <header>
+        <h1>🐟 Espècies de Peixos</h1>
+        <p class="api-badge">Dades: <a href="https://environment.data.gov.uk/ecology/api/v1/index.html" target="_blank" rel="noopener">Ecology and Fish Data API</a></p>
+    </header>
+
+    <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <p>Carregant espècies des de l'API…</p>
+    </div>
+
+    <main id="fish-container"></main>
+
+    <nav id="pagination" class="pagination" aria-label="Paginació"></nav>
+
+    <!-- Modal de detall d'espècie -->
+    <div id="modal-overlay" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="modal">
+            <button class="modal-close" id="modal-close" aria-label="Tancar">&#x2715;</button>
+            <div id="modal-content"></div>
+        </div>
+    </div>
+
+    <script src="script-fish.js"></script>
+</body>
+</html>

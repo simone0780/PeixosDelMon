@@ -1,0 +1,512 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+    color: #e0e0e0;
+    min-height: 100vh;
+}
+
+/* ── Header ─────────────────────────────────────────────────── */
+
+header {
+    background: linear-gradient(90deg, #0077b6, #00b4d8);
+    color: white;
+    padding: 1.5rem;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+header h1 {
+    font-size: 1.8rem;
+    letter-spacing: 0.02em;
+}
+
+.api-badge {
+    margin-top: 0.4rem;
+    font-size: 0.8rem;
+    opacity: 0.85;
+}
+
+.api-badge a {
+    color: #caf0f8;
+    text-decoration: underline;
+}
+
+/* ── Loading ─────────────────────────────────────────────────── */
+
+.loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    padding: 4rem 1rem;
+    color: #90e0ef;
+    font-size: 1rem;
+}
+
+.spinner {
+    width: 44px;
+    height: 44px;
+    border: 4px solid rgba(0, 180, 216, 0.2);
+    border-top-color: #00b4d8;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+.spinner.small {
+    width: 18px;
+    height: 18px;
+    border-width: 3px;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 0.4rem;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.error-msg {
+    color: #ff6b6b;
+    text-align: center;
+    padding: 1rem;
+}
+
+/* ── Grid de tarjetas ────────────────────────────────────────── */
+
+main {
+    max-width: 1100px;
+    margin: 2rem auto 1rem;
+    padding: 0 1rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1.4rem;
+}
+
+/* ── Tarjeta ─────────────────────────────────────────────────── */
+
+.card {
+    background: rgba(255, 255, 255, 0.07);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.25s, box-shadow 0.25s, background 0.25s;
+    outline: none;
+    display: flex;
+    flex-direction: column;
+}
+
+.card:hover,
+.card:focus {
+    transform: translateY(-6px) scale(1.02);
+    background: rgba(0, 180, 216, 0.1);
+    box-shadow: 0 10px 28px rgba(0, 180, 216, 0.22);
+    border-color: rgba(0, 180, 216, 0.35);
+}
+
+/* ── Imagen de la tarjeta ────────────────────────────────────── */
+
+.card-img-wrap {
+    position: relative;
+    width: 100%;
+    height: 180px;
+    overflow: hidden;
+    background: linear-gradient(135deg, #0a2a38, #0d3d52);
+    flex-shrink: 0;
+}
+
+.card-img-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    opacity: 0.35;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.25; }
+    50%       { opacity: 0.45; }
+}
+
+.card-img {
+    display: none;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.35s;
+}
+
+.card:hover .card-img {
+    transform: scale(1.07);
+}
+
+.card-img-label {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 1.8rem 0.8rem 0.55rem;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.78));
+    color: #fff;
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    pointer-events: none;
+}
+
+/* ── Contenido de la tarjeta ─────────────────────────────────── */
+
+.card-content {
+    padding: 1rem 1.1rem 1.1rem;
+    flex: 1;
+}
+
+.card-content h2 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #90e0ef;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 0.2rem;
+}
+
+.card-content .scientific-name {
+    font-style: italic;
+    font-size: 0.78rem;
+    color: #aaa;
+    margin-bottom: 0.3rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.card-content .species-code {
+    font-size: 0.75rem;
+    color: #555;
+}
+
+.card-content .species-code strong {
+    color: #00b4d8;
+}
+
+/* ── Paginació ───────────────────────────────────────────────── */
+
+.pagination {
+    max-width: 1100px;
+    margin: 0.5rem auto 2.5rem;
+    padding: 0 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.pagination button {
+    background: rgba(255, 255, 255, 0.07);
+    color: #90e0ef;
+    border: 1px solid rgba(0, 180, 216, 0.3);
+    border-radius: 8px;
+    padding: 0.45rem 0.75rem;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s, color 0.2s;
+    min-width: 36px;
+}
+
+.pagination button:hover:not(:disabled) {
+    background: rgba(0, 180, 216, 0.2);
+    border-color: #00b4d8;
+    color: #fff;
+}
+
+.pagination button.active {
+    background: #0077b6;
+    border-color: #00b4d8;
+    color: #fff;
+    font-weight: 700;
+    cursor: default;
+}
+
+.pagination button:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.pagination .ellipsis {
+    color: #666;
+    padding: 0 0.2rem;
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.pagination .page-info {
+    width: 100%;
+    text-align: center;
+    font-size: 0.78rem;
+    color: #666;
+    margin-top: 0.3rem;
+}
+
+/* ── Modal overlay ───────────────────────────────────────────── */
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.modal-overlay.hidden {
+    display: none;
+}
+
+/* ── Modal box ───────────────────────────────────────────────── */
+
+.modal {
+    background: linear-gradient(160deg, #0d2d3d, #112d3e);
+    border: 1px solid rgba(0, 180, 216, 0.3);
+    border-radius: 18px;
+    width: 100%;
+    max-width: 700px;
+    max-height: 88vh;
+    overflow-y: auto;
+    position: relative;
+    padding: 2rem 2rem 1.8rem;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+    scrollbar-width: thin;
+    scrollbar-color: #0077b6 transparent;
+}
+
+.modal::-webkit-scrollbar { width: 5px; }
+.modal::-webkit-scrollbar-thumb { background: #0077b6; border-radius: 4px; }
+
+.modal-close {
+    position: absolute;
+    top: 1rem;
+    right: 1.1rem;
+    background: none;
+    border: none;
+    color: #888;
+    font-size: 1.4rem;
+    cursor: pointer;
+    line-height: 1;
+    transition: color 0.2s;
+}
+
+.modal-close:hover {
+    color: #fff;
+}
+
+/* ── Modal hero (imagen + nombre) ───────────────────────────── */
+
+.modal-hero {
+    display: flex;
+    gap: 1.2rem;
+    align-items: flex-start;
+    margin-bottom: 1.6rem;
+}
+
+.modal-hero-img-wrap {
+    position: relative;
+    flex-shrink: 0;
+    width: 150px;
+    height: 130px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: linear-gradient(135deg, #0a2a38, #0d3d52);
+    border: 1px solid rgba(0, 180, 216, 0.2);
+}
+
+.modal-hero-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.8rem;
+    opacity: 0.3;
+}
+
+.modal-hero-img {
+    display: none;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.modal-hero-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.modal-hero-info h2 {
+    font-size: 1.35rem;
+    color: #90e0ef;
+    line-height: 1.25;
+    margin-bottom: 0.3rem;
+}
+
+.modal-hero-info .scientific-name {
+    font-size: 0.88rem;
+    color: #aaa;
+    margin-bottom: 0.5rem;
+}
+
+.modal-extract {
+    font-size: 0.82rem;
+    line-height: 1.55;
+    color: #bbb;
+    display: -webkit-box;
+    -webkit-line-clamp: 5;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+@media (max-width: 500px) {
+    .modal-hero {
+        flex-direction: column;
+    }
+    .modal-hero-img-wrap {
+        width: 100%;
+        height: 180px;
+    }
+}
+
+/* ── Taula d'especificacions ─────────────────────────────────── */
+
+.spec-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1.8rem;
+    font-size: 0.88rem;
+}
+
+.spec-table th,
+.spec-table td {
+    padding: 0.55rem 0.75rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    text-align: left;
+}
+
+.spec-table th {
+    color: #666;
+    font-weight: 500;
+    width: 38%;
+    white-space: nowrap;
+}
+
+.spec-table td {
+    color: #ccc;
+}
+
+.spec-table td a {
+    color: #00b4d8;
+    text-decoration: none;
+    font-size: 0.82rem;
+}
+
+.spec-table td a:hover { text-decoration: underline; }
+
+.spec-table code {
+    background: rgba(0, 180, 216, 0.1);
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    color: #90e0ef;
+}
+
+/* ── Secció d'observacions ───────────────────────────────────── */
+
+.obs-title {
+    font-size: 1rem;
+    color: #90e0ef;
+    margin-bottom: 0.9rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid rgba(0, 180, 216, 0.2);
+}
+
+.obs-loading {
+    color: #00b4d8;
+    font-size: 0.9rem;
+    padding: 0.5rem 0;
+    display: flex;
+    align-items: center;
+}
+
+.obs-count {
+    font-size: 0.8rem;
+    color: #666;
+    margin-bottom: 0.7rem;
+}
+
+.no-data {
+    color: #666;
+    font-size: 0.88rem;
+    font-style: italic;
+    padding: 0.5rem 0;
+}
+
+/* ── Taula d'observacions ────────────────────────────────────── */
+
+.obs-scroll {
+    overflow-x: auto;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.obs-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.78rem;
+    white-space: nowrap;
+}
+
+.obs-table thead th {
+    background: rgba(0, 119, 182, 0.25);
+    color: #90e0ef;
+    padding: 0.5rem 0.7rem;
+    text-align: left;
+    font-weight: 600;
+    text-transform: capitalize;
+    position: sticky;
+    top: 0;
+}
+
+.obs-table tbody tr {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    transition: background 0.15s;
+}
+
+.obs-table tbody tr:hover {
+    background: rgba(0, 180, 216, 0.06);
+}
+
+.obs-table tbody td {
+    padding: 0.45rem 0.7rem;
+    color: #bbb;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
