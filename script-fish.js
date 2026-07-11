@@ -1,12 +1,31 @@
-const API_BASE = 'https://environment.data.gov.uk/ecology/api/v1';
-const WIKI_API  = 'https://en.wikipedia.org/api/rest_v1/page/summary';
-const PAGE_SIZE = 10;
+const API_BASE   = 'https://environment.data.gov.uk/ecology/api/v1';
+const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
+const WIKI_API   = 'https://en.wikipedia.org/api/rest_v1/page/summary';
+const PAGE_SIZE  = 10;
 
 let allSpecies = [];
 let currentPage = 0;
 
 // Caché de dades de Wikipedia per nom científic
 const wikiCache = new Map();
+
+/**
+ * Fetch a l'API d'ecologia amb fallback a proxy CORS.
+ * Necessari quan la pàgina s'obre des de file:// o un host sense capçaleres CORS.
+ */
+async function ecologyFetch(path) {
+    const directUrl = `${API_BASE}${path}`;
+    try {
+        const res = await fetch(directUrl);
+        if (res.ok) return res.json();
+        throw new Error(`HTTP ${res.status}`);
+    } catch {
+        // Fallback: proxy CORS (allorigins.win)
+        const res = await fetch(`${CORS_PROXY}${encodeURIComponent(directUrl)}`);
+        if (!res.ok) throw new Error(`Proxy HTTP ${res.status}`);
+        return res.json();
+    }
+}
 
 async function fetchWikiData(scientificName) {
     if (wikiCache.has(scientificName)) return wikiCache.get(scientificName);
@@ -34,19 +53,20 @@ async function fetchWikiData(scientificName) {
 async function init() {
     showLoading(true);
     try {
-        // L'API retorna ~300 espècies; les agafem totes i paginam localment
-        const res = await fetch(`${API_BASE}/species?skip=0&take=600`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-        allSpecies = await res.json();
-        if (!Array.isArray(allSpecies) || allSpecies.length === 0) {
-            throw new Error('La resposta de l\'API no conté espècies.');
+        allSpecies = await ecologyFetch('/species?skip=0&take=600');
+        if (!Array.isArray(allSpecies) || allSpecies.length === 0) throw new Error('buit');
+    } catch {
+        // Fallback: dades locals embegudes (SPECIES_FALLBACK de fish-data.js)
+        if (typeof SPECIES_FALLBACK !== 'undefined' && SPECIES_FALLBACK.length) {
+            allSpecies = SPECIES_FALLBACK;
+        } else {
+            document.getElementById('loading').innerHTML =
+                '<p class="error-msg">⚠️ No s\'ha pogut connectar a l\'API. Comproveu la connexió.</p>';
+            showLoading(true);
+            return;
         }
-        renderPage(0);
-    } catch (err) {
-        const loadEl = document.getElementById('loading');
-        loadEl.innerHTML = `<p class="error-msg">⚠️ Error carregant l'API: ${escHtml(err.message)}</p>`;
-        return;
     }
+    renderPage(0);
     showLoading(false);
 }
 
@@ -201,11 +221,8 @@ async function showDetail(sp) {
     // Petició d'observacions filtrades per aquesta espècie
     try {
         const encoded = encodeURIComponent(sp.species);
-        const res = await fetch(`${API_BASE}/observations?ultimate_foi_id=${encoded}&take=20`);
+        const data = await ecologyFetch(`/observations?ultimate_foi_id=${encoded}&take=20`);
         document.getElementById('obs-loading').style.display = 'none';
-
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
         const obs = Array.isArray(data) ? data : (data.items ?? []);
         renderObservations(obs);
     } catch (err) {
