@@ -515,7 +515,104 @@ main {
     margin-top: 0.3rem;
 }
 
-/* ── Modal overlay ───────────────────────────────────────────── */
+/* ── Footer ──────────────────────────────────────────────── */
+
+.site-footer {
+    margin-top: 3rem;
+    border-top: 1px solid rgba(0, 180, 216, 0.12);
+    background: rgba(0, 0, 0, 0.25);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+.footer-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 2.5rem;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 2rem 3rem;
+    align-items: start;
+}
+
+.footer-brand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.footer-logo {
+    font-size: 2rem;
+    filter: drop-shadow(0 0 8px rgba(0, 180, 216, 0.5));
+    animation: pulse 3s ease-in-out infinite;
+}
+
+.footer-title {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #90e0ef;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+}
+
+.footer-sources .footer-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(0, 180, 216, 0.7);
+    margin-bottom: 0.5rem;
+}
+
+.footer-sources ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.footer-sources a {
+    font-size: 0.8rem;
+    color: #90c8d8;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.footer-sources a:hover {
+    color: #caf0f8;
+    text-decoration: underline;
+}
+
+.footer-note {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.footer-note p {
+    font-size: 0.75rem;
+    color: rgba(224, 224, 224, 0.45);
+    max-width: 260px;
+    line-height: 1.5;
+}
+
+.footer-year {
+    font-size: 0.72rem !important;
+    color: rgba(144, 224, 239, 0.5) !important;
+}
+
+@media (max-width: 640px) {
+    .footer-inner {
+        grid-template-columns: 1fr;
+        text-align: center;
+    }
+    .footer-brand { align-items: center; }
+    .footer-note  { text-align: center; align-items: center; }
+    .footer-note p { max-width: 100%; }
+    .footer-sources ul { align-items: center; }
+}
 
 .modal-overlay {
     position: fixed;

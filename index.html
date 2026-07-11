@@ -61,5 +61,27 @@
 
     <script src="fish-data.js"></script>
     <script src="script-fish.js"></script>
-</body>
+
+    <footer class="site-footer">
+        <div class="footer-inner">
+            <div class="footer-brand">
+                <span class="footer-logo">🐟</span>
+                <span class="footer-title">Espècies de Peixos</span>
+            </div>
+            <div class="footer-sources">
+                <p class="footer-label">Fonts de dades</p>
+                <ul>
+                    <li><a href="https://environment.data.gov.uk/ecology/api/v1/index.html" target="_blank" rel="noopener">Ecology &amp; Fish Data API ↗</a></li>
+                    <li><a href="https://www.inaturalist.org" target="_blank" rel="noopener">iNaturalist ↗</a></li>
+                    <li><a href="https://en.wikipedia.org" target="_blank" rel="noopener">Wikipedia REST API ↗</a></li>
+                </ul>
+            </div>
+            <div class="footer-note">
+                <p>Dades obertes i lliures. Les imatges i extractes provenen de Wikipedia (CC BY-SA) i iNaturalist.</p>
+                <p class="footer-year">&copy; <span id="footer-year"></span> Espècies de Peixos</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>document.getElementById('footer-year').textContent = new Date().getFullYear();</script>
 </html>
