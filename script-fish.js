@@ -1,10 +1,13 @@
-const API_BASE   = 'https://environment.data.gov.uk/ecology/api/v1';
-const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
-const WIKI_API   = 'https://en.wikipedia.org/api/rest_v1/page/summary';
-const PAGE_SIZE  = 10;
+const API_BASE        = 'https://environment.data.gov.uk/ecology/api/v1';
+const INATURALIST_API = 'https://api.inaturalist.org/v1/taxa';
+const CORS_PROXY      = 'https://api.allorigins.win/raw?url=';
+const WIKI_API        = 'https://en.wikipedia.org/api/rest_v1/page/summary';
+const PAGE_SIZE       = 10;
 
-let allSpecies = [];
-let currentPage = 0;
+let allSpecies      = [];
+let filteredSpecies = [];
+let currentPage     = 0;
+let activeSource    = ''; // '' = Totes les fonts
 
 // Caché de dades de Wikipedia per nom científic
 const wikiCache = new Map();
@@ -22,6 +25,18 @@ async function ecologyFetch(path) {
     } catch {
         // Fallback: proxy CORS (allorigins.win)
         const res = await fetch(`${CORS_PROXY}${encodeURIComponent(directUrl)}`);
+        if (!res.ok) throw new Error(`Proxy HTTP ${res.status}`);
+        return res.json();
+    }
+}
+
+async function fetchWithCORSFallback(url) {
+    try {
+        const res = await fetch(url);
+        if (res.ok) return res.json();
+        throw new Error(`HTTP ${res.status}`);
+    } catch {
+        const res = await fetch(`${CORS_PROXY}${encodeURIComponent(url)}`);
         if (!res.ok) throw new Error(`Proxy HTTP ${res.status}`);
         return res.json();
     }
@@ -52,29 +67,135 @@ async function fetchWikiData(scientificName) {
 
 async function init() {
     showLoading(true);
-    try {
-        allSpecies = await ecologyFetch('/species?skip=0&take=600');
-        if (!Array.isArray(allSpecies) || allSpecies.length === 0) throw new Error('buit');
-    } catch {
-        // Fallback: dades locals embegudes (SPECIES_FALLBACK de fish-data.js)
-        if (typeof SPECIES_FALLBACK !== 'undefined' && SPECIES_FALLBACK.length) {
-            allSpecies = SPECIES_FALLBACK;
-        } else {
-            document.getElementById('loading').innerHTML =
-                '<p class="error-msg">⚠️ No s\'ha pogut connectar a l\'API. Comproveu la connexió.</p>';
-            showLoading(true);
-            return;
-        }
-    }
+
+    // ── Fase 1: UK Ecology API (font principal) ────────────────────
+    const ukSpecies = await fetchUKEcology();
+    allSpecies      = ukSpecies;
+    filteredSpecies = allSpecies;
+    setupSearch();
+    setupSourceFilter();
     renderPage(0);
     showLoading(false);
+    updateSourceCounts();
+
+    // ── Fase 2: iNaturalist en segon pla ──────────────────────────
+    try {
+        const inatSpecies = await fetchINaturalistFish();
+        if (inatSpecies.length) {
+            const ukNames = new Set(ukSpecies.map(sp => (sp.alt_label ?? '').toLowerCase()));
+            const inatNew = inatSpecies.filter(sp => !ukNames.has((sp.alt_label ?? '').toLowerCase()));
+            allSpecies = [...ukSpecies, ...inatNew]
+                .sort((a, b) => (a.label ?? '').localeCompare(b.label ?? ''));
+            applyFilters();
+            updateSourceCounts();
+        }
+    } catch { /* iNaturalist fallida silenciosament */ }
 }
 
 function showLoading(show) {
     document.getElementById('loading').style.display = show ? 'flex' : 'none';
 }
 
+/* ─── Fonts de dades ─────────────────────────────────────────── */
+
+async function fetchUKEcology() {
+    try {
+        const data = await ecologyFetch('/species?skip=0&take=600');
+        if (!Array.isArray(data) || data.length === 0) throw new Error('buit');
+        return data.map(sp => ({ ...sp, source: 'UK Ecology' }));
+    } catch {
+        if (typeof SPECIES_FALLBACK !== 'undefined' && SPECIES_FALLBACK.length) {
+            return SPECIES_FALLBACK.map(sp => ({ ...sp, source: 'UK Ecology' }));
+        }
+        document.getElementById('loading').innerHTML =
+            '<p class="error-msg">⚠️ No s\'ha pogut connectar a l\'API. Comproveu la connexió.</p>';
+        showLoading(true);
+        return [];
+    }
+}
+
+async function fetchINaturalistFish() {
+    const results = [];
+    for (let page = 1; page <= 2; page++) {
+        try {
+            const url = `${INATURALIST_API}?taxon_id=47178&rank=species&per_page=200` +
+                        `&order_by=observations_count&order=desc&page=${page}&locale=en`;
+            const data = await fetchWithCORSFallback(url);
+            if (!Array.isArray(data.results) || !data.results.length) break;
+            results.push(...data.results);
+            if (data.results.length < 200) break;
+        } catch { break; }
+    }
+    return results
+        .filter(item => item.name)
+        .map(item => ({
+            label:     item.preferred_common_name || item.name,
+            alt_label: item.name,
+            notation:  String(item.id),
+            species:   `https://www.inaturalist.org/taxa/${item.id}`,
+            photo:     item.default_photo?.medium_url ?? null,
+            source:    'iNaturalist'
+        }));
+}
+
+/* ─── Filtres combinats (cerca + font) ───────────────────────── */
+
+function applyFilters() {
+    const q = (document.getElementById('species-search')?.value ?? '').trim().toLowerCase();
+    filteredSpecies = allSpecies.filter(sp => {
+        const matchSrc = !activeSource || sp.source === activeSource;
+        const matchQ   = !q
+            || (sp.label     ?? '').toLowerCase().includes(q)
+            || (sp.alt_label ?? '').toLowerCase().includes(q);
+        return matchSrc && matchQ;
+    });
+    const countEl  = document.getElementById('search-count');
+    const clearBtn = document.getElementById('search-clear');
+    if (countEl)  countEl.textContent = q
+        ? `${filteredSpecies.length} resultat${filteredSpecies.length !== 1 ? 's' : ''}`
+        : '';
+    if (clearBtn) clearBtn.hidden = !q;
+    renderPage(0);
+}
+
+function setupSourceFilter() {
+    document.querySelectorAll('.source-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            activeSource = btn.dataset.source;
+            document.querySelectorAll('.source-btn')
+                    .forEach(b => b.classList.toggle('active', b === btn));
+            applyFilters();
+        });
+    });
+}
+
+function updateSourceCounts() {
+    const counts = { '': allSpecies.length };
+    allSpecies.forEach(sp => { counts[sp.source] = (counts[sp.source] ?? 0) + 1; });
+    document.querySelectorAll('.source-btn').forEach(btn => {
+        const src  = btn.dataset.source;
+        const cnt  = counts[src] ?? 0;
+        const base = btn.dataset.label ?? btn.textContent.replace(/\s*\(\d+\)$/, '').trim();
+        btn.dataset.label = base;
+        btn.textContent   = cnt ? `${base} (${cnt})` : base;
+    });
+}
+
 /* ─── Renderització de pàgina ────────────────────────────────── */
+
+function setupSearch() {
+    const input    = document.getElementById('species-search');
+    const clearBtn = document.getElementById('search-clear');
+    if (!input) return;
+    input.addEventListener('input', applyFilters);
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            input.value = '';
+            input.focus();
+            applyFilters();
+        });
+    }
+}
 
 function renderPage(page) {
     currentPage = page;
@@ -82,7 +203,7 @@ function renderPage(page) {
     container.innerHTML = '';
 
     const start = page * PAGE_SIZE;
-    const pageSpecies = allSpecies.slice(start, start + PAGE_SIZE);
+    const pageSpecies = filteredSpecies.slice(start, start + PAGE_SIZE);
 
     pageSpecies.forEach(sp => {
         const card = document.createElement('div');
@@ -90,6 +211,7 @@ function renderPage(page) {
         card.setAttribute('role', 'button');
         card.setAttribute('tabindex', '0');
         card.setAttribute('aria-label', `Veure detalls de ${sp.label}`);
+        const srcKey = (sp.source ?? 'local').toLowerCase().replace(/\s+/g, '-');
         card.innerHTML = `
             <div class="card-img-wrap">
                 <div class="card-img-placeholder">🐟</div>
@@ -100,21 +222,30 @@ function renderPage(page) {
                 <h2>${escHtml(sp.label)}</h2>
                 <p class="scientific-name"><em>${escHtml(sp.alt_label)}</em></p>
                 <p class="species-code">Codi: <strong>${escHtml(sp.notation)}</strong></p>
+                <span class="source-badge source-badge--${escHtml(srcKey)}">${escHtml(sp.source ?? 'Local')}</span>
             </div>
         `;
         card.addEventListener('click', () => showDetail(sp));
         card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') showDetail(sp); });
         container.appendChild(card);
 
-        // Carrega la imatge de Wikipedia en segon pla
-        fetchWikiData(sp.alt_label).then(wiki => {
-            if (!wiki.image) return;
+        // Imatge de la card: directa (iNaturalist) o des de Wikipedia
+        if (sp.photo) {
             const imgEl = card.querySelector('.card-img');
             const phEl  = card.querySelector('.card-img-placeholder');
-            imgEl.onload = () => { phEl.style.display = 'none'; imgEl.style.display = 'block'; };
+            imgEl.onload  = () => { phEl.style.display = 'none'; imgEl.style.display = 'block'; };
             imgEl.onerror = () => {};
-            imgEl.src = wiki.image;
-        });
+            imgEl.src = sp.photo;
+        } else {
+            fetchWikiData(sp.alt_label).then(wiki => {
+                if (!wiki.image) return;
+                const imgEl = card.querySelector('.card-img');
+                const phEl  = card.querySelector('.card-img-placeholder');
+                imgEl.onload  = () => { phEl.style.display = 'none'; imgEl.style.display = 'block'; };
+                imgEl.onerror = () => {};
+                imgEl.src = wiki.image;
+            });
+        }
     });
 
     renderPagination();
@@ -124,7 +255,7 @@ function renderPage(page) {
 /* ─── Paginació ──────────────────────────────────────────────── */
 
 function renderPagination() {
-    const totalPages = Math.ceil(allSpecies.length / PAGE_SIZE);
+    const totalPages = Math.ceil(filteredSpecies.length / PAGE_SIZE);
     const pag = document.getElementById('pagination');
 
     const makeBtn = (label, targetPage, active = false, disabled = false) => {
@@ -152,7 +283,7 @@ function renderPagination() {
     }
 
     html += makeBtn('›', currentPage + 1, false, currentPage === totalPages - 1);
-    html += `<span class="page-info">Pàgina ${currentPage + 1} / ${totalPages} &nbsp;·&nbsp; ${allSpecies.length} espècies</span>`;
+    html += `<span class="page-info">Pàgina ${currentPage + 1} / ${totalPages} &nbsp;·&nbsp; ${filteredSpecies.length} espècies</span>`;
 
     pag.innerHTML = html;
 }
@@ -184,6 +315,7 @@ async function showDetail(sp) {
                 <tr><th>Nom comú</th><td>${escHtml(sp.label)}</td></tr>
                 <tr><th>Nom científic</th><td><em>${escHtml(sp.alt_label)}</em></td></tr>
                 <tr><th>Codi (notation)</th><td><code>${escHtml(sp.notation)}</code></td></tr>
+                <tr><th>Font dades</th><td><span class="source-badge source-badge--${escHtml((sp.source??'local').toLowerCase().replace(/\s+/g,'-'))}">${escHtml(sp.source??'Local')}</span></td></tr>
                 <tr><th>Font Wikipedia</th><td id="wiki-link"><em>carregant…</em></td></tr>
                 <tr><th>Recurs API</th><td><a href="${escHtml(sp.species)}" target="_blank" rel="noopener">Veure URI ↗</a></td></tr>
             </tbody>
@@ -198,13 +330,14 @@ async function showDetail(sp) {
         </div>
     `;
 
-    // Carrega Wikipedia (imatge + extracte) en paral·lel
+    // Carrega imatge (directa o Wikipedia) + extracte en paral·lel
     fetchWikiData(sp.alt_label).then(wiki => {
-        if (wiki.image) {
+        const imgUrl = sp.photo ?? wiki.image ?? null;
+        if (imgUrl) {
             const imgEl = content.querySelector('.modal-hero-img');
             const phEl  = content.querySelector('.modal-hero-placeholder');
             imgEl.onload = () => { phEl.style.display = 'none'; imgEl.style.display = 'block'; };
-            imgEl.src = wiki.image;
+            imgEl.src = imgUrl;
         }
         if (wiki.extract) {
             const extractEl = content.querySelector('#modal-extract');
@@ -218,17 +351,24 @@ async function showDetail(sp) {
         }
     });
 
-    // Petició d'observacions filtrades per aquesta espècie
-    try {
-        const encoded = encodeURIComponent(sp.species);
-        const data = await ecologyFetch(`/observations?ultimate_foi_id=${encoded}&take=20`);
-        document.getElementById('obs-loading').style.display = 'none';
-        const obs = Array.isArray(data) ? data : (data.items ?? []);
-        renderObservations(obs);
-    } catch (err) {
+    // Observacions: UK Ecology → consulta API; altres fonts → enllaç extern
+    if (sp.source === 'iNaturalist') {
         document.getElementById('obs-loading').style.display = 'none';
         document.getElementById('obs-content').innerHTML =
-            `<p class="no-data">No s'han pogut carregar les observacions: ${escHtml(err.message)}</p>`;
+            `<p class="no-data">Consulta les observacions d'aquesta espècie directament a
+             <a href="${escHtml(sp.species)}" target="_blank" rel="noopener">iNaturalist ↗</a>.</p>`;
+    } else {
+        try {
+            const encoded = encodeURIComponent(sp.species);
+            const data = await ecologyFetch(`/observations?ultimate_foi_id=${encoded}&take=20`);
+            document.getElementById('obs-loading').style.display = 'none';
+            const obs = Array.isArray(data) ? data : (data.items ?? []);
+            renderObservations(obs);
+        } catch (err) {
+            document.getElementById('obs-loading').style.display = 'none';
+            document.getElementById('obs-content').innerHTML =
+                `<p class="no-data">No s'han pogut carregar les observacions: ${escHtml(err.message)}</p>`;
+        }
     }
 }
 

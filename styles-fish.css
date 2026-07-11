@@ -37,6 +37,258 @@ header h1 {
     text-decoration: underline;
 }
 
+/* ── Search bar ──────────────────────────────────────────────── */
+
+.search-section {
+    display: flex;
+    justify-content: center;
+    padding: 2rem 1rem 0.4rem;
+}
+
+/* Glassmorphism card */
+.search-glass {
+    width: 100%;
+    max-width: 580px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.6rem;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(0, 180, 216, 0.18);
+    border-radius: 20px;
+    padding: 1rem 1.2rem;
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    transition: box-shadow 0.3s, border-color 0.3s;
+}
+
+.search-glass:focus-within {
+    border-color: rgba(0, 180, 216, 0.55);
+    box-shadow:
+        0 0 0 3px rgba(0, 180, 216, 0.12),
+        0 8px 40px rgba(0, 180, 216, 0.18),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Animated gradient border via pseudo-element */
+.search-field-wrap {
+    position: relative;
+    width: 100%;
+    border-radius: 999px;
+    padding: 2px;
+    background: linear-gradient(120deg, rgba(0,180,216,0.3), rgba(0,77,166,0.3), rgba(0,180,216,0.3));
+    background-size: 200% 200%;
+    animation: gradientShift 4s ease infinite;
+    transition: background 0.3s;
+}
+
+.search-field-wrap:focus-within {
+    background: linear-gradient(120deg, #00b4d8, #0077b6, #48cae4);
+    background-size: 200% 200%;
+    animation: gradientShift 2.5s ease infinite;
+}
+
+@keyframes gradientShift {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Inner row: icon + input + clear btn */
+.search-field-wrap > * {
+    position: relative;
+    z-index: 1;
+}
+
+.search-field-inner {
+    display: flex;
+    align-items: center;
+    background: #0d2233;
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+/* Rebuild inner bg by wrapping children in a div — done via CSS on the parent */
+.search-field-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0;
+}
+
+/* Actual inner surface */
+.search-field-wrap::after {
+    content: '';
+    position: absolute;
+    inset: 2px;
+    border-radius: 999px;
+    background: #0d2233;
+    z-index: 0;
+}
+
+.search-icon {
+    position: relative;
+    z-index: 1;
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    color: #5ac8e0;
+    margin-left: 1.1rem;
+    pointer-events: none;
+    transition: color 0.25s;
+}
+
+.search-field-wrap:focus-within .search-icon {
+    color: #00d4ff;
+}
+
+.species-search {
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    padding: 0.72rem 0.6rem 0.72rem 0.55rem;
+    background: transparent;
+    border: none;
+    color: #e8f4f8;
+    font-size: 0.97rem;
+    font-family: inherit;
+    letter-spacing: 0.01em;
+    outline: none;
+    caret-color: #00b4d8;
+}
+
+.species-search::placeholder {
+    color: rgba(90, 160, 190, 0.65);
+    font-style: italic;
+}
+
+/* Remove default browser search cancel button */
+.species-search::-webkit-search-cancel-button {
+    display: none;
+}
+
+.search-clear {
+    position: relative;
+    z-index: 1;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    margin-right: 0.6rem;
+    border: none;
+    border-radius: 50%;
+    background: rgba(0, 180, 216, 0.15);
+    color: #90d8ef;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, transform 0.15s;
+    padding: 0;
+}
+
+.search-clear svg {
+    width: 13px;
+    height: 13px;
+}
+
+.search-clear:hover {
+    background: rgba(0, 180, 216, 0.35);
+    color: #fff;
+    transform: scale(1.1);
+}
+
+.search-clear[hidden] {
+    display: none;
+}
+
+/* Result count pill */
+.search-count {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.2rem 0.75rem;
+    border-radius: 999px;
+    background: rgba(0, 180, 216, 0.1);
+    border: 1px solid rgba(0, 180, 216, 0.2);
+    color: #5ac8e0;
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    min-height: 1.5rem;
+    transition: opacity 0.2s;
+}
+
+.search-count:empty {
+    opacity: 0;
+    pointer-events: none;
+}
+/* ── Source filter ───────────────────────────────────────────── */
+
+.source-filter {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.source-btn {
+    padding: 0.28rem 0.9rem;
+    border-radius: 999px;
+    border: 1px solid rgba(0, 180, 216, 0.2);
+    background: rgba(255, 255, 255, 0.04);
+    color: #7bbdd0;
+    font-size: 0.75rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.12s;
+    white-space: nowrap;
+}
+
+.source-btn:hover {
+    border-color: rgba(0, 180, 216, 0.5);
+    color: #caf0f8;
+    transform: translateY(-1px);
+}
+
+.source-btn.active {
+    background: rgba(0, 180, 216, 0.18);
+    border-color: #00b4d8;
+    color: #fff;
+    font-weight: 600;
+}
+
+/* ── Source badge (cards & modal) ───────────────────────── */
+
+.source-badge {
+    display: inline-block;
+    margin-top: 0.4rem;
+    padding: 0.12rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    vertical-align: middle;
+}
+
+.source-badge--uk-ecology {
+    background: rgba(0, 119, 182, 0.2);
+    color: #7ac8e8;
+    border: 1px solid rgba(0, 119, 182, 0.35);
+}
+
+.source-badge--inaturalist {
+    background: rgba(80, 180, 100, 0.15);
+    color: #7ee8a0;
+    border: 1px solid rgba(80, 180, 100, 0.3);
+}
+
+.source-badge--local {
+    background: rgba(150, 100, 255, 0.15);
+    color: #c0a0ff;
+    border: 1px solid rgba(150, 100, 255, 0.3);
+}
 /* ── Loading ─────────────────────────────────────────────────── */
 
 .loading {

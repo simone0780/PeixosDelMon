@@ -12,6 +12,36 @@
         <p class="api-badge">Dades: <a href="https://environment.data.gov.uk/ecology/api/v1/index.html" target="_blank" rel="noopener">Ecology and Fish Data API</a></p>
     </header>
 
+    <div class="search-section">
+        <div class="search-glass">
+            <div class="search-field-wrap" id="search-field-wrap">
+                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input
+                    type="search"
+                    id="species-search"
+                    class="species-search"
+                    placeholder="Cerca per nom comú o científic…"
+                    aria-label="Cerca espècies per nom"
+                    autocomplete="off"
+                    spellcheck="false"
+                />
+                <button class="search-clear" id="search-clear" aria-label="Esborrar cerca" hidden>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <span id="search-count" class="search-count" aria-live="polite"></span>
+            <div class="source-filter" id="source-filter" role="group" aria-label="Filtrar per font">
+                <button class="source-btn active" data-source="">Totes</button>
+                <button class="source-btn" data-source="UK Ecology">🇬🇧 UK Ecology</button>
+                <button class="source-btn" data-source="iNaturalist">🌿 iNaturalist</button>
+            </div>
+        </div>
+    </div>
+
     <div id="loading" class="loading">
         <div class="spinner"></div>
         <p>Carregant espècies des de l'API…</p>
